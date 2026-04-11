@@ -158,19 +158,7 @@ python scripts/salesgpt_lead_adapter.py
 
 ---
 
-## What Not To Commit
 
-Generated runtime artifacts should be excluded:
-
-```
-output/
-*.json (runtime outputs)
-*.log
-```
-
-Vendored directories under `/external` and `/Sales-Agent` are included as dependencies but are not part of the core system.
-
----
 
 ## Status
 
