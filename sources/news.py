@@ -31,17 +31,16 @@ def fetch_news_leads(queries: List[str]) -> List[Dict[str, Any]]:
 def _fetch_news_apify(query: str) -> List[Dict[str, Any]]:
     """Fetch from news via Apify."""
     try:
-        actor_id = "apify/google-news-scraper"
+        actor_id = "johnvc/GoogleNewsAPI"
         input_data = {
-            "searchTerm": query,
-            "limit": 20,
-            "maxRequests": 100
+            "q": query,
+            "max_pages": 1
         }
         
         rows = run_apify_actor(actor_id, input_data)
         normalized = []
         
-        for item in rows:
+        for item in _flatten_articles(rows):
             # Extract entities from news content using NER
             entities = _extract_entities(item.get('title', '') + ' ' + item.get('content', ''))
             
@@ -63,6 +62,20 @@ def _fetch_news_apify(query: str) -> List[Dict[str, Any]]:
         logger.warning(f"News Apify failed: {e}")
     
     return []
+
+
+def _flatten_articles(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Turn one-item-per-page news_results into one item per article."""
+    articles = []
+    for row in rows:
+        if 'news_results' not in row:
+            # Search-fallback rows from run_apify_actor are already one per result
+            articles.append(row)
+            continue
+        for article in row.get('news_results') or []:
+            if isinstance(article, dict):
+                articles.append({**article, 'content': article.get('snippet', ''), 'url': article.get('link')})
+    return articles
 
 
 def _extract_entities(text: str) -> List[str]:
